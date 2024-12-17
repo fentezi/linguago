@@ -20,7 +20,7 @@ func (s *Service) AddTranslation(word, translation string) error {
 		return err
 	}
 
-	s.log.Debug("translation added successfully", slog.String("word", word))
+	s.log.Debug("translation added successfully", slog.String("word", word), slog.String("translation", translation))
 	return nil
 }
 
