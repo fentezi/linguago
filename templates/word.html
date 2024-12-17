@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Сохраненные слова</title>
+  <title>Мой словарь</title>
 
   <!-- Мета-теги для SEO -->
   <meta name="description" content="Учите слова на английском с помощью этого удобного веб-приложения. Добавляйте, редактируйте и удаляйте слова в вашем личном словаре.">
@@ -29,7 +29,7 @@
   <link rel="shortcut icon" href="../static/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="../static/apple-touch-icon.png" />
   <link rel="manifest" href="../static/site.webmanifest" />
-  
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
@@ -52,7 +52,7 @@
 
     <!-- Заголовок страницы -->
     <header>
-      <h1><i class="fa-solid fa-bookmark"></i> Список слов</h1>
+      <h1><i class="fa-solid fa-bookmark"></i> Словарь</h1>
     </header>
 
     <!-- Ошибки -->
@@ -118,7 +118,7 @@
       tableBody.innerHTML = '';
 
       try {
-        const response = await fetch('/words');
+        const response = await fetch('/api/words');
         if (!response.ok) throw new Error(`Ошибка загрузки: ${response.statusText}`);
         const words = await response.json();
 
@@ -152,7 +152,7 @@
     async function deleteWord(word) {
       const errorDiv = document.getElementById('error');
       try {
-        const response = await fetch(`/words/${encodeURIComponent(word)}`, { method: 'DELETE' });
+        const response = await fetch(`/api/words/${encodeURIComponent(word)}`, { method: 'DELETE' });
         if (!response.ok) throw new Error(`Не удалось удалить: ${response.statusText}`);
         fetchWords(); // Обновление списка
       } catch (error) {
@@ -163,7 +163,7 @@
     async function addWord(text, translation) {
       const errorDiv = document.getElementById('error');
       try {
-        const response = await fetch('/add', {
+        const response = await fetch('/api/add', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

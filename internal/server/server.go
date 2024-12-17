@@ -32,12 +32,17 @@ func (s *Server) Start() error {
 	e := echo.New()
 	e.Validator = &CustomValidator{validator: validator.New()}
 
+	api := e.Group("/api")
+	{
+		api.POST("/add", s.Controller.AddTranslate)
+		api.DELETE("/words/:word", s.Controller.DeleteWord)
+		api.GET("/words", s.Controller.GetAllWords)
+		api.POST("/translations", s.Controller.TranslateWord)
+
+	}
+
 	e.GET("/", s.Controller.IndexHTML)
-	e.GET("/saved-words", s.Controller.WordHTML)
-	e.POST("/translations", s.Controller.TranslateWord)
-	e.GET("/words", s.Controller.GetAllWords)
-	e.DELETE("/words/:word", s.Controller.DeleteWord)
-	e.POST("/add", s.Controller.AddTranslate)
+	e.GET("/words", s.Controller.WordHTML)
 
 	e.Static("/static", "static")
 
