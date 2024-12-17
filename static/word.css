@@ -1,0 +1,100 @@
+/* Общие стили */
+body {
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #f0f2f5, #e8eff7);
+  color: #333;
+}
+
+h1 {
+  text-align: center;
+  color: #007bff;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* Контейнер таблицы */
+.table-container {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  padding: 20px;
+}
+
+table {
+  width: 100%;
+}
+
+th {
+  background-color: #f4f4f4;
+  color: #333;
+  text-transform: uppercase;
+  font-weight: 500;
+  text-align: left;
+  padding: 12px;
+}
+
+td {
+  padding: 10px;
+  border-top: 1px solid #ddd;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:hover {
+  background-color: #e0f7ff;
+}
+
+/* Кнопки */
+.delete-button {
+  background-color: #ff4d4d;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  background-color: #e60000;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+  padding: 8px 12px;
+  background: #f9f9f9;
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: #007bff;
+  color: #ffffff;
+}
+
+/* Ошибки */
+.error {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .table-container {
+    padding: 10px;
+  }
+
+  table {
+    font-size: 14px;
+  }
+}

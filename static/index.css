@@ -1,0 +1,51 @@
+/* Общие стили */
+body {
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #f0f2f5, #e8eff7);
+  color: #333;
+}
+
+h1, h2 {
+  font-weight: 700;
+}
+
+.card {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+textarea {
+  resize: none;
+  height: 200px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease;
+}
+
+textarea:focus {
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+  outline: none;
+}
+
+textarea[readonly] {
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+/* Кнопка */
+button {
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  background-color: #0056b3;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  textarea {
+    height: 150px;
+  }
+}
