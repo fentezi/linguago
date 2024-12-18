@@ -109,6 +109,15 @@
         await addWord(newWord, translation);
         addWordForm.reset();
       });
+
+      // Добавить обработчик для кнопок звука
+      document.addEventListener('click', async (event) => {
+        const button = event.target.closest('.play-audio-button');
+        if (button) {
+          const word = button.dataset.word;
+          await playAudio(word);
+        }
+      });
     });
 
     async function fetchWords() {
@@ -133,6 +142,9 @@
             <td>${text}</td>
             <td>${translation}</td>
             <td>
+              <button class="play-audio-button btn btn-sm btn-secondary" data-word="${text}">
+                <i class="fa-solid fa-volume-up"></i>
+              </button>
               <button class="delete-button btn btn-sm btn-danger" data-word="${text}">Удалить</button>
             </td>
           `;
@@ -174,6 +186,24 @@
         fetchWords(); // Обновление списка
       } catch (error) {
         errorDiv.textContent = `Ошибка добавления: ${error.message}`;
+      }
+    }
+
+    async function playAudio(word) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = ''; // Очистить ошибки
+
+      try {
+        const response = await fetch(`/api/words/${encodeURIComponent(word)}`, { method: 'GET' });
+        if (!response.ok) throw new Error(`Не удалось загрузить аудио: ${response.statusText}`);
+
+        // Преобразование ответа в Blob и воспроизведение
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+      } catch (error) {
+        errorDiv.textContent = `Ошибка воспроизведения звука: ${error.message}`;
       }
     }
   </script>

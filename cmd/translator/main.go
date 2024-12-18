@@ -8,6 +8,7 @@ import (
 	"github.com/fentezi/translator/internal/repositories"
 	"github.com/fentezi/translator/internal/server"
 	"github.com/fentezi/translator/internal/services"
+	"github.com/fentezi/translator/pkg/elevenlabs"
 	"github.com/fentezi/translator/pkg/logger"
 )
 
@@ -31,7 +32,10 @@ func main() {
 	redisDB := repositories.NewRedisRepository(redis, ctx)
 	log.Info("RedisDB repository initialized")
 
-	service := services.NewService(redisDB, postgresDB, log)
+	clientLabs := elevenlabs.NewElevenLabs(ctx, cfg.ApiKey)
+	log.Info("ElevenLabs client initialized")
+
+	service := services.NewService(redisDB, postgresDB, log, clientLabs)
 	log.Info("Service initialized")
 
 	controllers := controllers.NewControllers(service)

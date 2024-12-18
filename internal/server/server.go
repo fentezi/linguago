@@ -36,6 +36,7 @@ func (s *Server) Start() error {
 	{
 		api.POST("/add", s.Controller.AddTranslate)
 		api.DELETE("/words/:word", s.Controller.DeleteWord)
+		api.GET("/words/:word", s.Controller.GetAudio)
 		api.GET("/words", s.Controller.GetAllWords)
 		api.POST("/translations", s.Controller.TranslateWord)
 

@@ -9,24 +9,25 @@ import (
 
 type (
 	Config struct {
-		Env      string   `yml:"env"`
-		Redis    Redis    `yml:"redis"`
-		Postgres Postgres `yml:"postgres"`
+		Env      string   `yaml:"env"`
+		Redis    Redis    `yaml:"redis"`
+		Postgres Postgres `yaml:"postgres"`
+		ApiKey   string   `yaml:"api_key"`
 	}
 
 	Redis struct {
-		Host     string `yml:"host"`
-		Port     string `yml:"port"`
-		Password string `yml:"password"`
-		NumberDB int    `yml:"db"`
+		Host     string `yaml:"host"`
+		Port     string `yaml:"port"`
+		Password string `yaml:"password"`
+		NumberDB int    `yaml:"db"`
 	}
 
 	Postgres struct {
-		Host     string `yml:"host"`
-		Port     string `yml:"port"`
-		Username string `yml:"username"`
-		Password string `yml:"password"`
-		Database string `yml:"database"`
+		Host     string `yaml:"host"`
+		Port     string `yaml:"port"`
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+		Database string `yaml:"database"`
 	}
 )
 

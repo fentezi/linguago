@@ -98,3 +98,7 @@ tr:hover {
     font-size: 14px;
   }
 }
+
+.play-audio-button {
+  margin-right: 8px;
+}

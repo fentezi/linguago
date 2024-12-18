@@ -50,3 +50,15 @@ func (h *Controller) TranslateWord(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, TranslateResponse{Translation: translation})
 }
+
+func (h *Controller) GetAudio(c echo.Context) error {
+	word := c.Param("word")
+	file, err := h.service.GetAudio(word)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate audio"})
+	}
+
+	defer file.Close()
+
+	return c.Stream(http.StatusOK, "audio/mpeg", file)
+}

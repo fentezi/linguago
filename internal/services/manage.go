@@ -1,7 +1,9 @@
 package services
 
 import (
+	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/fentezi/translator/internal/models"
 )
@@ -35,6 +37,13 @@ func (s *Service) DeleteTranslation(word string) error {
 		return err
 	}
 	s.log.Debug("successfully deleted translation from PostgreSQL", slog.String("word", word))
+
+	filePath := fmt.Sprintf("./audio/%s.mp3", word)
+	err = os.Remove(filePath)
+	if err != nil && !os.IsNotExist(err) {
+		s.log.Error("failed to delete audio file", slog.String("word", word), slog.String("filePath", filePath), slog.Any("error", err))
+		return fmt.Errorf("failed to delete audio file: %w", err)
+	}
 
 	s.log.Debug("translation deleted successfully", slog.String("word", word))
 	return nil
