@@ -1,14 +1,14 @@
 env: "dev"
 api_key: "sk_66b5ad520917f56228f2d49da8d3f27a9e8477ad66573dd6"  
 redis:
-  host: "localhost"
+  host: "redis"
   port: "6379"
   password: ""
   db: 0
 
 postgres:
-  host: "localhost"
+  host: "postgres"
   port: "5432"
   username: "postgres"
-  password: "postgres"
+  password: "kolyaseroux"
   database: "dictionary"  
