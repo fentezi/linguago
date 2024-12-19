@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/fentezi/translator/internal/models"
+	"github.com/lib/pq"
 )
 
 type PostgreSQLRepository struct {
@@ -47,6 +48,10 @@ func (r *PostgreSQLRepository) Set(key string, value string) error {
 
 	_, err := r.db.ExecContext(r.ctx, query, key, value)
 	if err != nil {
+		var pgErr *pq.Error
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return fmt.Errorf("%s: %w", op, ErrAlreadyExists)
+		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
 

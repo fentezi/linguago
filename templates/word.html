@@ -182,8 +182,18 @@
           },
           body: JSON.stringify({ text, translation })
         });
-        if (!response.ok) throw new Error(`Не удалось добавить слово: ${response.statusText}`);
-        fetchWords(); // Обновление списка
+        
+        // Если статус 201 - слово успешно добавлено
+        if (response.status === 201) {
+          fetchWords();
+          errorDiv.textContent = '';
+          return;
+        }
+        
+        // Если статус не 201 - пробуем получить текст ошибки
+        const data = await response.json();
+        throw new Error(data.error || response.statusText);
+        
       } catch (error) {
         errorDiv.textContent = `Ошибка добавления: ${error.message}`;
       }

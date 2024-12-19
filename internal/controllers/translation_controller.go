@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 
+	"github.com/fentezi/translator/internal/repositories"
 	"github.com/labstack/echo/v4"
 )
 
@@ -27,6 +29,9 @@ func (h *Controller) AddTranslate(c echo.Context) error {
 
 	err := h.service.AddTranslation(req.Word, req.Translation)
 	if err != nil {
+		if errors.Is(err, repositories.ErrAlreadyExists) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Данное слово уже существует"})
+		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
