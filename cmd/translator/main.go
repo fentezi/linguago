@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/fentezi/translator/config"
 	"github.com/fentezi/translator/internal/controllers"
@@ -16,6 +17,8 @@ func main() {
 	cfg := config.MustConfig()
 
 	log := logger.NewLogger(cfg.Env)
+
+	log.Info("config", slog.Any("cfg", cfg))
 
 	ctx := context.Background()
 
