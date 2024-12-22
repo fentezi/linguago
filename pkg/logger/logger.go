@@ -1,8 +1,11 @@
 package logger
 
 import (
+	"io"
 	"log/slog"
 	"os"
+
+	"github.com/natefinch/lumberjack"
 )
 
 func NewLogger(env string) *slog.Logger {
@@ -19,9 +22,16 @@ func NewLogger(env string) *slog.Logger {
 		)
 		logger = slog.New(prettyHandler)
 	case "prod":
+		rotationLogFile := &lumberjack.Logger{
+			Filename:   "./logs/app.log",
+			MaxSize:    10,
+			MaxBackups: 3,
+			MaxAge:     30,
+			Compress:   true,
+		}
 		logger = slog.New(
 			slog.NewJSONHandler(
-				os.Stdout,
+				io.MultiWriter(rotationLogFile, os.Stdout),
 				&slog.HandlerOptions{
 					Level: slog.LevelInfo,
 				},

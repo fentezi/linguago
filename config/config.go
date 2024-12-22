@@ -16,14 +16,14 @@ type (
 	}
 
 	Redis struct {
-		Host     string `yaml:"host"`
+		Host     string `yaml:"host" env:"REDIS_HOST"`
 		Port     string `yaml:"port"`
 		Password string `yaml:"password" env:"REDIS_PASSWORD"`
 		NumberDB int    `yaml:"db"`
 	}
 
 	Postgres struct {
-		Host     string `yaml:"host"`
+		Host     string `yaml:"host" env:"POSTGRES_HOST"`
 		Port     string `yaml:"port"`
 		Username string `yaml:"username"`
 		Password string `yaml:"password" env:"POSTGRES_PASSWORD"`

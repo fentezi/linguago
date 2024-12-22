@@ -30,7 +30,10 @@ func main() {
 	postgresDB := repositories.NewPostgreSQLRepository(postgres, ctx)
 	log.Info("PostgresDB repository initialized")
 
-	redis := repositories.NewRedis(cfg)
+	redis, err := repositories.NewRedis(cfg)
+	if err != nil {
+		panic(err)
+	}
 
 	redisDB := repositories.NewRedisRepository(redis, ctx)
 	log.Info("RedisDB repository initialized")
@@ -47,6 +50,6 @@ func main() {
 	server := server.NewServer(*controllers)
 	log.Info("Server started")
 
-	server.Start()
+	server.Start(log)
 
 }

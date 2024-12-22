@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -22,7 +23,7 @@ type Repository interface {
 	Delete(key string) error
 }
 
-func NewRedis(cfg *config.Config) *redis.Client {
+func NewRedis(cfg *config.Config) (*redis.Client, error) {
 	addr := fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port)
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
@@ -30,7 +31,12 @@ func NewRedis(cfg *config.Config) *redis.Client {
 		DB:       cfg.Redis.NumberDB,
 	})
 
-	return client
+	status := client.Ping(context.Background())
+	if _, err := status.Result(); err != nil {
+		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+	}
+
+	return client, nil
 }
 
 func NewPostgreSQL(cfg *config.Config) (*sql.DB, error) {
