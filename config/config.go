@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 )
 
 type (
@@ -46,6 +47,11 @@ func MustConfig() *Config {
 	err := cleanenv.ReadConfig(path, &cfg)
 	if err != nil {
 		panic("failed to read config file: " + err.Error())
+	}
+
+	err = godotenv.Load()
+	if err != nil {
+		panic("failed to load environment variables: " + err.Error())
 	}
 
 	err = cleanenv.ReadEnv(&cfg)

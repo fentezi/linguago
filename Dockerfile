@@ -19,9 +19,8 @@ RUN apk --no-cache add ca-certificates
 
 COPY --from=builder /build/main .
 COPY --from=builder /build/config.yml config.yml
-COPY --from=builder /build/static /app/static
-COPY --from=builder /build/templates /app/templates
 COPY --from=builder /build/audio /app/audio
+COPY .env .env
 
 EXPOSE 8080
 

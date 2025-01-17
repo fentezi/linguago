@@ -5,65 +5,70 @@ import (
 	"net/http"
 
 	"github.com/fentezi/translator/internal/repositories"
+	"github.com/fentezi/translator/internal/requests"
+	"github.com/fentezi/translator/internal/responses"
+	"github.com/fentezi/translator/internal/services"
 	"github.com/labstack/echo/v4"
 )
 
-type AddTranslateRequest struct {
-	Word        string `json:"text"`
-	Translation string `json:"translation"`
-}
-
-type TranslateRequest struct {
-	Text string `json:"text" validate:"required"`
-}
-
-type TranslateResponse struct {
-	Translation string `json:"translation"`
-}
-
 func (h *Controller) AddTranslate(c echo.Context) error {
-	var req AddTranslateRequest
+	var req requests.AddRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request format"})
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	if err := c.Validate(req); err != nil {
+		return err
 	}
 
-	err := h.service.AddTranslation(req.Word, req.Translation)
+	res, err := h.service.AddTranslation(req.Word, req.Translation)
 	if err != nil {
 		if errors.Is(err, repositories.ErrAlreadyExists) {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Данное слово уже существует"})
+			return echo.NewHTTPError(http.StatusConflict, "word already exists in list")
 		}
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.NoContent(http.StatusCreated)
+	resp := responses.TranslationResponse{
+		ID:          res.ID,
+		Word:        res.Word,
+		Translation: res.Translation,
+	}
+
+	return c.JSON(http.StatusCreated, resp)
 
 }
 
 func (h *Controller) TranslateWord(c echo.Context) error {
-	var req TranslateRequest
+	var req requests.TranslateRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request format"})
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Field 'text' is required"})
+		return err
 	}
 
-	translation, err := h.service.GetTranslation(req.Text)
+	translation, err := h.service.GetTranslation(req.Word)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch translation"})
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch translation")
 	}
 
-	return c.JSON(http.StatusOK, TranslateResponse{Translation: translation})
+	return c.JSON(http.StatusOK, echo.Map{
+		"translation": translation,
+	})
 }
 
 func (h *Controller) GetAudio(c echo.Context) error {
-	word := c.Param("word")
-	file, err := h.service.GetAudio(word)
+	wordID := c.Param("word_id")
+	file, err := h.service.GetAudio(wordID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate audio"})
+		if errors.Is(err, services.ErrAudioNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, services.ErrAudioNotFound)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch audio")
 	}
 
 	defer file.Close()
 
-	return c.Stream(http.StatusOK, "audio/mpeg", file)
+	return c.Stream(http.StatusOK, "audio/mp3", file)
 }
+	

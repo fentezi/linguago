@@ -1,0 +1,192 @@
+openapi: 3.1.0
+info:
+  title: API Translator
+  summary: API that allows you to translate words from English into Russian
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: serouhn@gmail.com
+
+servers:
+  - url: https://example.com/api/v1
+    description: Production server
+  - url: http://localhost:8080/api/v1
+    description: Test local server
+
+paths:
+  /words:
+    get:
+      summary: Returns all words and word translations
+      operationId: getWords
+      responses:
+        '200':
+          description: A JSON array of words
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  words:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GetWordSchema'
+        '404':
+          $ref: '#/components/responses/NotFound'
+          
+    post:
+      summary: Creates a translation
+      operationId: createWord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWordSchema'
+      responses:
+        '201':
+          description: Successfully created translation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWordSchema'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Word already exist 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'  
+
+  /words/{word_id}/audio:
+    parameters:
+      - in: path
+        name: word_id
+        required: true
+        description: ID of the word
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Returns the audio voiceover for a word
+      operationId: getAudio
+      responses:
+        '200':
+          description: Successfully retrieved audio
+          content:
+            audio/mp3:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'  
+
+  /words/{word_id}:
+    parameters:
+      - in: path
+        name: word_id
+        required: true
+        description: ID of the word to delete
+        schema:
+          type: string
+          format: uuid
+    delete:
+      summary: Delete word and translation
+      operationId: deleteWord
+      responses:
+        '204':
+          description: Successfully deleted word
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /translate:
+    post:
+      summary: Translates a word
+      operationId: translateWord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranslateWordSchema'
+      responses:
+        '200':
+          description: Successfully translated word
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - translation
+                properties:
+                  translation:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  responses:
+    NotFound:
+      description: The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Not all fields were filled in
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+      required:
+        - message
+      additionalProperties: false
+    CreateWordSchema:
+      type: object
+      required:
+        - word
+        - translation
+      properties:
+        word:
+          type: string
+        translation:
+          type: string
+      additionalProperties: false
+    GetWordSchema:
+      type: object
+      required:
+        - id
+        - word
+        - translation
+      properties:
+        id:
+          type: string
+          format: uuid
+        word:
+          type: string
+        translation:
+          type: string
+      additionalProperties: false
+    TranslateWordSchema:
+      type: object
+      required:
+        - word
+      properties:
+        word:
+          type: string
+      additionalProperties: false

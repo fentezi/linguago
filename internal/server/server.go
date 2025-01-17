@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/fentezi/translator/internal/controllers"
-	"github.com/go-playground/validator/v10"
+	"github.com/fentezi/translator/pkg/vld"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -15,28 +15,16 @@ type Server struct {
 	Controller controllers.Controller
 }
 
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	if err := cv.validator.Struct(i); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func NewServer(controller controllers.Controller) *Server {
 	return &Server{
 		Controller: controller,
 	}
 }
 
-func (s *Server) Start(log *slog.Logger) error {
+func (s *Server) Start(log *slog.Logger) *echo.Echo {
 	e := echo.New()
-	e.Validator = &CustomValidator{validator: validator.New()}
-
+	e.Validator = vld.New()
+	e.Use(middleware.CORS())
 	e.Use(middleware.RequestLoggerWithConfig(
 		middleware.RequestLoggerConfig{
 			LogStatus:   true,
@@ -67,20 +55,15 @@ func (s *Server) Start(log *slog.Logger) error {
 			},
 		}))
 
-	api := e.Group("/api")
+	api := e.Group("/api/v1")
 	{
-		api.POST("/add", s.Controller.AddTranslate)
-		api.DELETE("/words/:word", s.Controller.DeleteWord)
-		api.GET("/words/:word", s.Controller.GetAudio)
 		api.GET("/words", s.Controller.GetAllWords)
-		api.POST("/translations", s.Controller.TranslateWord)
+		api.POST("/words", s.Controller.AddTranslate)
+		api.DELETE("/words/:word_id", s.Controller.DeleteWord)
+		api.GET("/words/:word_id/audio", s.Controller.GetAudio)
+		api.POST("/translate", s.Controller.TranslateWord)
 
 	}
 
-	e.GET("/", s.Controller.IndexHTML)
-	e.GET("/words", s.Controller.WordHTML)
-
-	e.Static("/static", "static")
-
-	return e.Start(":8080")
+	return e
 }

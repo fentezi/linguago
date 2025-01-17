@@ -1,13 +1,13 @@
 env: "prod" 
 api_key: "${API_KEY}"  
 redis:
-  host: "localhost"
+  host: "redis"
   port: "6379"
   password: "${REDIS_PASSWORD}"
   db: 0
 
 postgres:
-  host: "localhost"
+  host: "postgres"
   port: "5432"
   username: "postgres"
   password: "${POSTGRES_PASSWORD}"

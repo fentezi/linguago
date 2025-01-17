@@ -21,30 +21,30 @@ func (s *Service) GetAllWords() ([]models.Word, error) {
 	return words, nil
 }
 
-func (s *Service) DeleteTranslation(word string) error {
-	s.log.Debug("attempting to delete translation", slog.String("word", word))
+func (s *Service) DeleteTranslation(wordID string) error {
+	s.log.Debug("attempting to delete translation", slog.String("word_id", wordID))
 
-	err := s.RedisRepository.Delete(word)
+	err := s.RedisRepository.Delete(wordID)
 	if err != nil {
-		s.log.Error("failed to delete translation from Redis", slog.String("word", word), slog.Any("error", err))
+		s.log.Error("failed to delete translation from Redis", slog.String("word_id", wordID), slog.Any("error", err))
 		return err
 	}
-	s.log.Debug("successfully deleted translation from Redis", slog.String("word", word))
+	s.log.Debug("successfully deleted translation from Redis", slog.String("word", wordID))
 
-	err = s.PostgreSQLRepository.Delete(word)
+	err = s.PostgreSQLRepository.Delete(wordID)
 	if err != nil {
-		s.log.Error("failed to delete translation from PostgreSQL", slog.String("word", word), slog.Any("error", err))
+		s.log.Error("failed to delete translation from PostgreSQL", slog.String("word_id", wordID), slog.Any("error", err))
 		return err
 	}
-	s.log.Debug("successfully deleted translation from PostgreSQL", slog.String("word", word))
+	s.log.Debug("successfully deleted translation from PostgreSQL", slog.String("wordID", wordID))
 
-	filePath := fmt.Sprintf("./audio/%s.mp3", word)
+	filePath := fmt.Sprintf("./audio/%s.mp3", wordID)
 	err = os.Remove(filePath)
 	if err != nil && !os.IsNotExist(err) {
-		s.log.Error("failed to delete audio file", slog.String("word", word), slog.String("filePath", filePath), slog.Any("error", err))
+		s.log.Error("failed to delete audio file", slog.String("word_id", wordID), slog.String("filePath", filePath), slog.Any("error", err))
 		return fmt.Errorf("failed to delete audio file: %w", err)
 	}
 
-	s.log.Debug("translation deleted successfully", slog.String("word", word))
+	s.log.Debug("translation deleted successfully", slog.String("wordIDD", wordID))
 	return nil
 }

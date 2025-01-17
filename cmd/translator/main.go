@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/fentezi/translator/config"
 	"github.com/fentezi/translator/internal/controllers"
@@ -48,8 +52,28 @@ func main() {
 	log.Info("Controllers initialized")
 
 	server := server.NewServer(*controllers)
-	log.Info("Server started")
+	log.Info("Server initialized")
 
-	server.Start(log)
+	e := server.Start(log)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	go func() {
+		if err := e.Start(":8080"); err != nil && err != http.ErrServerClosed {
+			log.Error("shutting down the server")
+		}
+	}()
+
+	<-ctx.Done()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := e.Shutdown(ctx); err != nil {
+		log.Error("server forced to shutdown:", slog.Any("err", err))
+	} else {
+		log.Info("Server shut down gracefully.")
+	}
 
 }

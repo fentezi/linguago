@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/fentezi/translator/internal/models"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -41,21 +42,26 @@ func (r *PostgreSQLRepository) Get(key string) (string, error) {
 	return text, nil
 }
 
-func (r *PostgreSQLRepository) Set(key string, value string) error {
+func (r *PostgreSQLRepository) Set(id uuid.UUID, key string, value string) (*models.Word, error) {
 	const op = "repositories.PostgreSQLRepository.Set"
 
-	query := `INSERT INTO words (text, translation) VALUES ($1, $2)`
+	query := `INSERT INTO words (word_id, text, translation) VALUES ($1, $2, $3)`
 
-	_, err := r.db.ExecContext(r.ctx, query, key, value)
+	_, err := r.db.ExecContext(r.ctx, query, id, key, value)
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return fmt.Errorf("%s: %w", op, ErrAlreadyExists)
+			return nil, fmt.Errorf("%s: %w", op, ErrAlreadyExists)
 		}
-		return fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return nil
+	res := models.Word{
+		ID:          id,
+		Word:        key,
+		Translation: value,
+	}
+	return &res, nil
 }
 
 func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
@@ -72,7 +78,7 @@ func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
 	var words []models.Word
 	for rows.Next() {
 		var word models.Word
-		err := rows.Scan(&word.ID, &word.Text, &word.Translation)
+		err := rows.Scan(&word.ID, &word.Word, &word.Translation)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}

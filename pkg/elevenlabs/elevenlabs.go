@@ -20,9 +20,9 @@ func NewElevenLabs(ctx context.Context, apiKey string) *elevenlabs.Client {
 	return client
 }
 
-func TextToSpeech(client *elevenlabs.Client, text string) error {
+func TextToSpeech(client *elevenlabs.Client, wordID, word string) error {
 	ttsReq := elevenlabs.TextToSpeechRequest{
-		Text:    text,
+		Text:    word,
 		ModelID: ModelID,
 		VoiceSettings: &elevenlabs.VoiceSettings{
 			SpeakerBoost:    false,
@@ -40,7 +40,7 @@ func TextToSpeech(client *elevenlabs.Client, text string) error {
 		return err
 	}
 
-	if err := os.WriteFile(fmt.Sprintf("./audio/%s.mp3", text), audio, 0644); err != nil {
+	if err := os.WriteFile(fmt.Sprintf("./audio/%s.mp3", wordID), audio, 0644); err != nil {
 		return err
 	}
 

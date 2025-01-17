@@ -8,7 +8,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    env_file: "./.env"
+    env_file: ".env"
+    volumes:
+      - ./.env:/app/.env
 
 
   migrate:

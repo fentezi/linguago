@@ -47,6 +47,8 @@ func NewPostgreSQL(cfg *config.Config) (*sql.DB, error) {
 		cfg.Postgres.Password,
 		cfg.Postgres.Database,
 	)
+
+	fmt.Println(psql)
 	db, err := sql.Open("postgres", psql)
 	if err != nil {
 		return nil, err

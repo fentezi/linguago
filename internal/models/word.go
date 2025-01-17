@@ -1,7 +1,9 @@
 package models
 
+import "github.com/google/uuid"
+
 type Word struct {
-	ID          int    `json:"id"`
-	Text        string `json:"text"`
-	Translation string `json:"translation"`
+	ID          uuid.UUID
+	Word        string
+	Translation string
 }
