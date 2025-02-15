@@ -34,18 +34,10 @@ func main() {
 	postgresDB := repositories.NewPostgreSQLRepository(postgres, ctx)
 	log.Info("PostgresDB repository initialized")
 
-	redis, err := repositories.NewRedis(cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	redisDB := repositories.NewRedisRepository(redis, ctx)
-	log.Info("RedisDB repository initialized")
-
 	clientLabs := elevenlabs.NewElevenLabs(ctx, cfg.ApiKey)
 	log.Info("ElevenLabs client initialized")
 
-	service := services.NewService(redisDB, postgresDB, log, clientLabs)
+	service := services.NewService(postgresDB, log, clientLabs)
 	log.Info("Service initialized")
 
 	controllers := controllers.NewControllers(service)

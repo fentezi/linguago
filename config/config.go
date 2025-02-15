@@ -11,16 +11,8 @@ import (
 type (
 	Config struct {
 		Env      string   `yaml:"env"`
-		Redis    Redis    `yaml:"redis"`
 		Postgres Postgres `yaml:"postgres"`
 		ApiKey   string   `yaml:"api_key" env:"API_KEY"`
-	}
-
-	Redis struct {
-		Host     string `yaml:"host" env:"REDIS_HOST"`
-		Port     string `yaml:"port"`
-		Password string `yaml:"password" env:"REDIS_PASSWORD"`
-		NumberDB int    `yaml:"db"`
 	}
 
 	Postgres struct {

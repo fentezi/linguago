@@ -42,7 +42,7 @@ func (r *PostgreSQLRepository) Get(key string) (string, error) {
 	return text, nil
 }
 
-func (r *PostgreSQLRepository) Set(id uuid.UUID, key string, value string) (*models.Word, error) {
+func (r *PostgreSQLRepository) Set(id uuid.UUID, key string, value string) error {
 	const op = "repositories.PostgreSQLRepository.Set"
 
 	query := `INSERT INTO words (word_id, text, translation) VALUES ($1, $2, $3)`
@@ -51,17 +51,12 @@ func (r *PostgreSQLRepository) Set(id uuid.UUID, key string, value string) (*mod
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf("%s: %w", op, ErrAlreadyExists)
+			return fmt.Errorf("%s: %w", op, ErrAlreadyExists)
 		}
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	res := models.Word{
-		ID:          id,
-		Word:        key,
-		Translation: value,
-	}
-	return &res, nil
+	return nil
 }
 
 func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
@@ -96,7 +91,7 @@ func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
 func (r *PostgreSQLRepository) Delete(key string) error {
 	const op = "repositories.PostgreSQLRepository.Delete"
 
-	query := `DELETE FROM words WHERE text = $1`
+	query := `DELETE FROM words WHERE word_id = $1`
 
 	_, err := r.db.ExecContext(r.ctx, query, key)
 	if err != nil {

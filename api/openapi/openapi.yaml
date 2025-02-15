@@ -190,3 +190,4 @@ components:
         word:
           type: string
       additionalProperties: false
+

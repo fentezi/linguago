@@ -57,11 +57,11 @@ func (s *Server) Start(log *slog.Logger) *echo.Echo {
 
 	api := e.Group("/api/v1")
 	{
-		api.GET("/words", s.Controller.GetAllWords)
-		api.POST("/words", s.Controller.AddTranslate)
+		api.GET("/words", s.Controller.GetWords)
+		api.POST("/words", s.Controller.CreateWord)
 		api.DELETE("/words/:word_id", s.Controller.DeleteWord)
 		api.GET("/words/:word_id/audio", s.Controller.GetAudio)
-		api.POST("/translate", s.Controller.TranslateWord)
+		api.POST("/translations", s.Controller.TranslateWord)
 
 	}
 

@@ -1,13 +1,11 @@
 package repositories
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/fentezi/translator/config"
-	"github.com/redis/go-redis/v9"
 
 	_ "github.com/lib/pq"
 )
@@ -21,22 +19,6 @@ type Repository interface {
 	Get(key string) (string, error)
 	Set(key string, value string) error
 	Delete(key string) error
-}
-
-func NewRedis(cfg *config.Config) (*redis.Client, error) {
-	addr := fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port)
-	client := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.NumberDB,
-	})
-
-	status := client.Ping(context.Background())
-	if _, err := status.Result(); err != nil {
-		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
-	}
-
-	return client, nil
 }
 
 func NewPostgreSQL(cfg *config.Config) (*sql.DB, error) {

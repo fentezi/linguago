@@ -3,17 +3,14 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/fentezi/translator/internal/requests"
 	"github.com/labstack/echo/v4"
 )
 
-func (h *Controller) GetAllWords(c echo.Context) error {
+func (h *Controller) GetWords(c echo.Context) error {
 	words, err := h.service.GetAllWords()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	if len(words) == 0 {
-		return echo.NewHTTPError(http.StatusNotFound, "list words empty")
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{
@@ -22,9 +19,17 @@ func (h *Controller) GetAllWords(c echo.Context) error {
 }
 
 func (h *Controller) DeleteWord(c echo.Context) error {
-	word := c.Param("word_id")
+	var req requests.DeleteRequest
 
-	err := h.service.DeleteTranslation(word)
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	if err := c.Validate(req); err != nil {
+		return err
+	}
+
+	err := h.service.DeleteTranslation(req.WordID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}

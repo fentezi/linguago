@@ -57,12 +57,8 @@ func TestPostgreSQLRepository_Set(t *testing.T) {
 		WithArgs(id, key, value).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	words, err := repo.Set(id, key, value)
+	err = repo.Set(id, key, value)
 	assert.NoError(t, err)
-
-	assert.Equal(t, id, words.ID)
-	assert.Equal(t, key, words.Word)
-	assert.Equal(t, value, words.Translation)
 
 }
 
@@ -108,8 +104,8 @@ func TestPostgreSQLRepository_Delete(t *testing.T) {
 	ctx := context.Background()
 	repo := NewPostgreSQLRepository(db, ctx)
 
-	key := "hello"
-	query := regexp.QuoteMeta(`DELETE FROM words WHERE text = $1`)
+	key := "1"
+	query := regexp.QuoteMeta(`DELETE FROM words WHERE word_id = $1`)
 
 	mock.ExpectExec(query).
 		WithArgs(key).
