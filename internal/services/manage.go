@@ -7,10 +7,11 @@ import (
 	"log/slog"
 
 	"github.com/fentezi/translator/internal/models"
+	"github.com/google/uuid"
 )
 
-func (s *Service) GetAllWords() ([]models.Word, error) {
-	logger := s.log.With(slog.String("operation", "GetAllWords"))
+func (s *Service) GetWords() ([]models.Word, error) {
+	logger := s.log.With(slog.String("operation", "GetWords"))
 	logger.Debug("fetching all words from PostgreSQL")
 
 	words, err := s.PostgreSQLRepository.Gets()
@@ -23,8 +24,8 @@ func (s *Service) GetAllWords() ([]models.Word, error) {
 	return words, nil
 }
 
-func (s *Service) DeleteTranslation(wordID string) error {
-	logger := s.log.With(slog.String("word_id", wordID), slog.String("operation", "DeleteTranslation"))
+func (s *Service) DeleteWord(wordID uuid.UUID) error {
+	logger := s.log.With(slog.String("word_id", wordID.String()), slog.String("operation", "DeleteWord"))
 	logger.Debug("starting deletion process")
 
 	if err := s.PostgreSQLRepository.Delete(wordID); err != nil {

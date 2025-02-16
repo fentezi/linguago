@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/fentezi/translator/config"
 	"github.com/fentezi/translator/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -16,21 +17,48 @@ type PostgreSQLRepository struct {
 	ctx context.Context
 }
 
-func NewPostgreSQLRepository(db *sql.DB, ctx context.Context) *PostgreSQLRepository {
-	return &PostgreSQLRepository{
-		db:  db,
-		ctx: ctx,
+var (
+	ErrNotFound      = errors.New("not found")
+	ErrAlreadyExists = errors.New("already exists")
+)
+
+func New(ctx context.Context, cfg *config.Postgres) (*PostgreSQLRepository, error) {
+	psql := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Host,
+		cfg.Port,
+		cfg.Username,
+		cfg.Password,
+		cfg.Database,
+	)
+
+	db, err := sql.Open("postgres", psql)
+	if err != nil {
+		return nil, err
 	}
+
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	return &PostgreSQLRepository{
+		ctx: ctx,
+		db:  db,
+	}, nil
 }
 
-func (r *PostgreSQLRepository) Get(key string) (string, error) {
+func (r *PostgreSQLRepository) Close() {
+	_ = r.db.Close()
+}
+
+func (r *PostgreSQLRepository) Get(wordID uuid.UUID) (string, error) {
 	const op = "repositories.PostgreSQLRepository.Get"
 
 	query := `SELECT translation FROM words WHERE text = $1`
 
 	var text string
 
-	err := r.db.QueryRowContext(r.ctx, query, key).Scan(&text)
+	err := r.db.QueryRowContext(r.ctx, query, wordID).Scan(&text)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", fmt.Errorf("%s: %w", op, ErrNotFound)
@@ -42,12 +70,12 @@ func (r *PostgreSQLRepository) Get(key string) (string, error) {
 	return text, nil
 }
 
-func (r *PostgreSQLRepository) Set(id uuid.UUID, key string, value string) error {
+func (r *PostgreSQLRepository) Set(wordID uuid.UUID, key string, value string) error {
 	const op = "repositories.PostgreSQLRepository.Set"
 
 	query := `INSERT INTO words (word_id, text, translation) VALUES ($1, $2, $3)`
 
-	_, err := r.db.ExecContext(r.ctx, query, id, key, value)
+	_, err := r.db.ExecContext(r.ctx, query, wordID, key, value)
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -88,12 +116,12 @@ func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
 	return words, nil
 }
 
-func (r *PostgreSQLRepository) Delete(key string) error {
+func (r *PostgreSQLRepository) Delete(wordID uuid.UUID) error {
 	const op = "repositories.PostgreSQLRepository.Delete"
 
 	query := `DELETE FROM words WHERE word_id = $1`
 
-	_, err := r.db.ExecContext(r.ctx, query, key)
+	_, err := r.db.ExecContext(r.ctx, query, wordID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

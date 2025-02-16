@@ -15,7 +15,7 @@ type Server struct {
 	Controller controllers.Controller
 }
 
-func NewServer(controller controllers.Controller) *Server {
+func New(controller controllers.Controller) *Server {
 	return &Server{
 		Controller: controller,
 	}

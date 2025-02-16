@@ -13,7 +13,7 @@ type Service struct {
 	log                  *slog.Logger
 }
 
-func NewService(pr *repositories.PostgreSQLRepository, log *slog.Logger, client *elevenlabs.Client) *Service {
+func New(pr *repositories.PostgreSQLRepository, log *slog.Logger, client *elevenlabs.Client) *Service {
 	return &Service{
 		ClientLabs:           client,
 		log:                  log,

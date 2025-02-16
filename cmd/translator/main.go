@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
@@ -20,52 +21,53 @@ import (
 func main() {
 	cfg := config.MustConfig()
 
-	log := logger.NewLogger(cfg.Env)
-
-	log.Info("config", slog.Any("cfg", cfg))
+	log := logger.NewLogger(cfg.Env).With(slog.String("component", "main"))
+	log.Info("starting application", slog.Any("config", cfg))
 
 	ctx := context.Background()
 
-	postgres, err := repositories.NewPostgreSQL(cfg)
+	repo, err := repositories.New(ctx, &cfg.Postgres)
 	if err != nil {
+		log.Error("failed to initialize repository", slog.Any("error", err))
 		panic(err)
 	}
+	log.Info("repository initialized")
+	defer repo.Close()
 
-	postgresDB := repositories.NewPostgreSQLRepository(postgres, ctx)
-	log.Info("PostgresDB repository initialized")
-
-	clientLabs := elevenlabs.NewElevenLabs(ctx, cfg.ApiKey)
+	clientLabs := elevenlabs.New(ctx, cfg.ApiKey)
 	log.Info("ElevenLabs client initialized")
 
-	service := services.NewService(postgresDB, log, clientLabs)
-	log.Info("Service initialized")
+	service := services.New(repo, log, clientLabs)
+	log.Info("service layer initialized")
 
-	controllers := controllers.NewControllers(service)
-	log.Info("Controllers initialized")
+	controller := controllers.New(service)
+	log.Info("controller initialized")
 
-	server := server.NewServer(*controllers)
-	log.Info("Server initialized")
+	srv := server.New(*controller)
+	log.Info("server initialized")
 
-	e := server.Start(log)
+	e := srv.Start(log)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
 	go func() {
-		if err := e.Start(":8080"); err != nil && err != http.ErrServerClosed {
-			log.Error("shutting down the server")
+		log.Info("starting HTTP server on :8080")
+		if err := e.Start(":8080"); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("server encountered a critical error", slog.Any("error", err))
+			panic(err)
 		}
 	}()
-
 	<-ctx.Done()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	log.Info("received shutdown signal, shutting down server")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := e.Shutdown(ctx); err != nil {
-		log.Error("server forced to shutdown:", slog.Any("err", err))
+	if err := e.Shutdown(shutdownCtx); err != nil {
+		log.Error("server forced to shutdown", slog.Any("error", err))
 	} else {
-		log.Info("Server shut down gracefully.")
+		log.Info("server shut down gracefully")
 	}
-
 }

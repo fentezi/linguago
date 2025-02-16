@@ -4,14 +4,14 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/fentezi/translator/internal/controllers/requests"
+	"github.com/fentezi/translator/internal/controllers/responses"
 	"github.com/fentezi/translator/internal/repositories"
-	"github.com/fentezi/translator/internal/requests"
-	"github.com/fentezi/translator/internal/responses"
 	"github.com/labstack/echo/v4"
 )
 
 func (h *Controller) CreateWord(c echo.Context) error {
-	var req requests.AddRequest
+	var req requests.CreateWordRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -19,7 +19,7 @@ func (h *Controller) CreateWord(c echo.Context) error {
 		return err
 	}
 
-	res, err := h.service.AddTranslation(req.Word, req.Translation)
+	res, err := h.service.CreateWord(req.Word, req.Translation)
 	if err != nil {
 		if errors.Is(err, repositories.ErrAlreadyExists) {
 			return echo.NewHTTPError(http.StatusConflict, "word already exists")
@@ -27,7 +27,7 @@ func (h *Controller) CreateWord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	resp := responses.TranslationResponse{
+	resp := responses.CreateWordResponse{
 		ID:          res.ID,
 		Word:        res.Word,
 		Translation: res.Translation,
@@ -38,7 +38,7 @@ func (h *Controller) CreateWord(c echo.Context) error {
 }
 
 func (h *Controller) TranslateWord(c echo.Context) error {
-	var req requests.TranslateRequest
+	var req requests.TranslateWordRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -46,7 +46,7 @@ func (h *Controller) TranslateWord(c echo.Context) error {
 		return err
 	}
 
-	translation, err := h.service.GetTranslation(req.Word)
+	translation, err := h.service.TranslateWord(req.Word)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch translation")
 	}

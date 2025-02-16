@@ -1,10 +1,10 @@
 package requests
 
-type AddRequest struct {
+type CreateWordRequest struct {
 	Word        string `json:"word" validate:"required"`
 	Translation string `json:"translation" validate:"required"`
 }
 
-type TranslateRequest struct {
+type TranslateWordRequest struct {
 	Word string `json:"word" validate:"required"`
 }

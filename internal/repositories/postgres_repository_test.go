@@ -47,7 +47,8 @@ func TestPostgreSQLRepository_Set(t *testing.T) {
 	defer db.Close()
 
 	ctx := context.Background()
-	repo := NewPostgreSQLRepository(db, ctx)
+	repo, err := New(ctx, nil)
+	assert.NoError(t, err)
 
 	id := uuid.New()
 	key := "hello"
@@ -68,7 +69,8 @@ func TestPostgreSQLRepository_Gets(t *testing.T) {
 	defer db.Close()
 
 	ctx := context.Background()
-	repo := NewPostgreSQLRepository(db, ctx)
+	repo, err := New(ctx, nil)
+	assert.NoError(t, err)
 
 	id1 := uuid.New()
 	id2 := uuid.New()

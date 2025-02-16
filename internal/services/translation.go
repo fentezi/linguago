@@ -17,12 +17,13 @@ var (
 	ErrAudioNotFound = errors.New("audio not found")
 )
 
-func (s *Service) AddTranslation(word, translation string) (*models.Word, error) {
+func (s *Service) CreateWord(word, translation string) (*models.Word, error) {
 	wordID := uuid.New()
 	logger := s.log.With(
 		slog.String("word", word),
 		slog.String("translation", translation),
 		slog.String("word_id", wordID.String()),
+		slog.String("operation", "CreateWord"),
 	)
 
 	logger.Debug("adding translation")
@@ -39,7 +40,7 @@ func (s *Service) AddTranslation(word, translation string) (*models.Word, error)
 		Translation: translation,
 	}
 
-	if err := s.SaveAudio(word, wordID.String()); err != nil {
+	if err := s.SaveAudio(wordID, word); err != nil {
 		logger.Warn("translation saved, but failed to generate audio", slog.Any("error", err))
 		return res, nil
 	}
@@ -48,8 +49,11 @@ func (s *Service) AddTranslation(word, translation string) (*models.Word, error)
 	return res, nil
 }
 
-func (s *Service) GetTranslation(word string) (string, error) {
-	logger := s.log.With(slog.String("word", word))
+func (s *Service) TranslateWord(word string) (string, error) {
+	logger := s.log.With(
+		slog.String("word", word),
+		slog.String("operation", "TranslateWord"),
+	)
 	logger.Debug("fetching translation")
 
 	translation, err := google.TranslateWordAPI(word)
@@ -64,7 +68,7 @@ func (s *Service) GetTranslation(word string) (string, error) {
 		logger.Warn("translation fetched but failed to save to PostgreSQL", slog.Any("error", saveErr))
 	}
 
-	if err := s.SaveAudio(word, wordID.String()); err != nil {
+	if err := s.SaveAudio(wordID, word); err != nil {
 		logger.Warn("translation saved but failed to generate audio", slog.Any("error", err))
 	}
 
@@ -72,10 +76,11 @@ func (s *Service) GetTranslation(word string) (string, error) {
 	return translation, nil
 }
 
-func (s *Service) SaveAudio(word, wordID string) error {
+func (s *Service) SaveAudio(wordID uuid.UUID, word string) error {
 	logger := s.log.With(
 		slog.String("word", word),
-		slog.String("word_id", wordID),
+		slog.String("word_id", wordID.String()),
+		slog.String("operation", "SaveAudio"),
 	)
 
 	logger.Debug("generating audio")
@@ -98,8 +103,11 @@ func (s *Service) SaveAudio(word, wordID string) error {
 	return nil
 }
 
-func (s *Service) GetAudio(wordID string) (*os.File, error) {
-	logger := s.log.With(slog.String("word_id", wordID))
+func (s *Service) GetAudio(wordID uuid.UUID) (*os.File, error) {
+	logger := s.log.With(
+		slog.String("word_id", wordID.String()),
+		slog.String("operation", "GetAudio"),
+	)
 	logger.Debug("fetching audio file")
 
 	filePath := fmt.Sprintf("./audio/%s.mp3", wordID)

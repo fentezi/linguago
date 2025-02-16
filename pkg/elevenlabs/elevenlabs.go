@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/haguro/elevenlabs-go"
 )
 
@@ -14,13 +15,13 @@ const (
 	VoiceID = "9BWtsMINqrJLrRacOk9x"
 )
 
-func NewElevenLabs(ctx context.Context, apiKey string) *elevenlabs.Client {
+func New(ctx context.Context, apiKey string) *elevenlabs.Client {
 	client := elevenlabs.NewClient(ctx, apiKey, 10*time.Second)
 
 	return client
 }
 
-func TextToSpeech(client *elevenlabs.Client, wordID, word string) error {
+func TextToSpeech(client *elevenlabs.Client, wordID uuid.UUID, word string) error {
 	ttsReq := elevenlabs.TextToSpeechRequest{
 		Text:    word,
 		ModelID: ModelID,
