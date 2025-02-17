@@ -33,3 +33,9 @@ logs
 # air tools
 tmp
 .air.toml
+
+# Goland
+.idea
+
+# VSCode
+.vscode
