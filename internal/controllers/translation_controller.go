@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"github.com/fentezi/translator/pkg/helper"
 	"net/http"
 
 	"github.com/fentezi/translator/internal/controllers/requests"
@@ -13,18 +14,18 @@ import (
 func (h *Controller) CreateWord(c echo.Context) error {
 	var req requests.CreateWordRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, helper.InvalidJSON())
 	}
-	if err := c.Validate(&req); err != nil {
-		return err
+	if errs := h.validator.Validate(req); len(errs) > 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, helper.InvalidRequestData(errs))
 	}
 
 	res, err := h.service.CreateWord(req.Word, req.Translation)
 	if err != nil {
 		if errors.Is(err, repositories.ErrAlreadyExists) {
-			return echo.NewHTTPError(http.StatusConflict, "word already exists")
+			return echo.NewHTTPError(http.StatusConflict, helper.NewAPIError(errors.New("word already exists")))
 		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError, helper.NewAPIError(err))
 	}
 
 	resp := responses.CreateWordResponse{
@@ -40,15 +41,15 @@ func (h *Controller) CreateWord(c echo.Context) error {
 func (h *Controller) TranslateWord(c echo.Context) error {
 	var req requests.TranslateWordRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, helper.InvalidJSON())
 	}
-	if err := c.Validate(&req); err != nil {
-		return err
+	if errs := h.validator.Validate(req); len(errs) > 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, helper.InvalidRequestData(errs))
 	}
 
 	translation, err := h.service.TranslateWord(req.Word)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch translation")
+		return echo.NewHTTPError(http.StatusInternalServerError, helper.NewAPIError(err))
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{
@@ -60,16 +61,16 @@ func (h *Controller) GetAudio(c echo.Context) error {
 	var req requests.GetAudioRequest
 
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, helper.InvalidParam(err))
 	}
 
-	if err := c.Validate(&req); err != nil {
-		return err
+	if errs := h.validator.Validate(req); len(errs) > 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, helper.InvalidRequestData(errs))
 	}
 
 	file, err := h.service.GetAudio(req.WordID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch audio")
+		return echo.NewHTTPError(http.StatusInternalServerError, helper.NewAPIError(err))
 	}
 
 	defer file.Close()

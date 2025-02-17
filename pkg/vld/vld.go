@@ -1,26 +1,50 @@
 package vld
 
 import (
-	"net/http"
-
+	"errors"
 	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
+	"reflect"
 )
 
-type CustomValidator struct {
+type Validator struct {
 	validator *validator.Validate
 }
 
-func New() *CustomValidator {
-	return &CustomValidator{
+func New() *Validator {
+	return &Validator{
 		validator: validator.New(),
 	}
 }
 
-func (cv *CustomValidator) Validate(i interface{}) error {
-	if err := cv.validator.Struct(i); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "fill in all fields")
+func (v *Validator) Validate(i interface{}) map[string]string {
+	if err := v.validator.Struct(i); err != nil {
+		var validationErrors validator.ValidationErrors
+		errorMessages := make(map[string]string)
+		if errors.As(err, &validationErrors) {
+			for _, e := range validationErrors {
+				field := getJSONFieldName(i, e.StructField())
+				errorMessages[field] = e.Tag()
+			}
+			return errorMessages
+		}
+		errorMessages["error"] = err.Error()
+		return errorMessages
+	}
+	return nil
+}
+
+func getJSONFieldName(i interface{}, fieldName string) string {
+	t := reflect.TypeOf(i)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
 	}
 
-	return nil
+	if field, ok := t.FieldByName(fieldName); ok {
+		jsonTag := field.Tag.Get("json")
+		if jsonTag != "" && jsonTag != "-" {
+			return jsonTag
+		}
+	}
+
+	return fieldName
 }

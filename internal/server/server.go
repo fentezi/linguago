@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/fentezi/translator/internal/controllers"
-	"github.com/fentezi/translator/pkg/vld"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -23,7 +22,6 @@ func New(controller controllers.Controller) *Server {
 
 func (s *Server) Start(log *slog.Logger) *echo.Echo {
 	e := echo.New()
-	e.Validator = vld.New()
 	e.Use(middleware.CORS())
 	e.Use(middleware.RequestLoggerWithConfig(
 		middleware.RequestLoggerConfig{
