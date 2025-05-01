@@ -1,9 +1,14 @@
-env: "dev" 
-api_key: "${API_KEY}"  
+env: "dev"
+api_key: "${API_KEY}"
 
 postgres:
-  host: "localhost"
+  host: "postgres"
   port: "5432"
   username: "postgres"
   password: "${POSTGRES_PASSWORD}"
-  database: "dictionary"  
+  database: "dictionary"
+
+brokers:
+  address: "kafka"
+  port: "9092"
+  topic: "words"

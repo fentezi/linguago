@@ -14,7 +14,7 @@ func (s *Service) GetWords() ([]models.Word, error) {
 	logger := s.log.With(slog.String("operation", "GetWords"))
 	logger.Debug("fetching all words from PostgreSQL")
 
-	words, err := s.PostgreSQLRepository.Gets()
+	words, err := s.Repository.Gets()
 	if err != nil {
 		logger.Error("failed to fetch words from PostgreSQL", slog.Any("error", err))
 		return nil, err
@@ -28,7 +28,7 @@ func (s *Service) DeleteWord(wordID uuid.UUID) error {
 	logger := s.log.With(slog.String("word_id", wordID.String()), slog.String("operation", "DeleteWord"))
 	logger.Debug("starting deletion process")
 
-	if err := s.PostgreSQLRepository.Delete(wordID); err != nil {
+	if err := s.Repository.Delete(wordID); err != nil {
 		logger.Error("failed to delete translation from PostgreSQL", slog.Any("error", err))
 		return err
 	}

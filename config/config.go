@@ -13,6 +13,7 @@ type (
 		Env      string   `yaml:"env"`
 		Postgres Postgres `yaml:"postgres"`
 		ApiKey   string   `yaml:"api_key" env:"API_KEY"`
+		Broker   Kafka    `yaml:"brokers"`
 	}
 
 	Postgres struct {
@@ -21,6 +22,12 @@ type (
 		Username string `yaml:"username"`
 		Password string `yaml:"password" env:"POSTGRES_PASSWORD"`
 		Database string `yaml:"database"`
+	}
+
+	Kafka struct {
+		Address string `yaml:"address"`
+		Port    string `yaml:"port"`
+		Topic   string `yaml:"topic"`
 	}
 )
 

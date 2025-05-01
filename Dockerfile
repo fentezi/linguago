@@ -1,6 +1,4 @@
-FROM golang:1.23.2-alpine AS builder
-
-RUN apk add --no-cache gcc musl-dev
+FROM golang:1.23.2-bookworm AS builder
 
 WORKDIR /build
 
@@ -11,11 +9,13 @@ COPY . .
 
 RUN CGO_ENABLED=1 go build -o main ./cmd/translator/main.go
 
-FROM alpine:latest
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
-RUN apk --no-cache add ca-certificates
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /build/main .
 COPY --from=builder /build/config.yml config.yml

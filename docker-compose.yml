@@ -2,23 +2,33 @@ services:
   app:
     build: .
     ports:
-      - 8080:8080
+      - "8090:8090"
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     env_file: ".env"
     volumes:
       - ./.env:/app/.env
-
+    networks:
+      - app-network
 
   migrate:
     image: migrate/migrate
     volumes:
       - ./db/migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/dictionary?sslmode=disable", "up"]
+    command:
+      - "-path"
+      - "/migrations"
+      - "-database"
+      - "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/dictionary?sslmode=disable"
+      - "up"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - app-network
 
   postgres:
     image: postgres
@@ -33,14 +43,62 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U postgres"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
+      test: "pg_isready -U postgres"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    ports:
+      - "9093:9093"
+    environment:
+      CLUSTER_ID: 1
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "controller,broker"
+      KAFKA_LISTENERS: "PLAINTEXT://kafka:9092,EXTERNAL://0.0.0.0:9093,CONTROLLER://kafka:9094"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9094"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "kafka cluster"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
+    depends_on:
+      - kafka
+    networks:
+      - app-network
 
 volumes:
-  postgres_data: 
+  postgres_data:
+  kafka_data:
 
 networks:
   app-network:
     driver: bridge
+    name: app-network

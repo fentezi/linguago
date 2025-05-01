@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/fentezi/translator/config"
 	"github.com/fentezi/translator/internal/models"
@@ -36,6 +37,9 @@ func New(ctx context.Context, cfg *config.Postgres) (*PostgreSQLRepository, erro
 		return nil, err
 	}
 
+	db.SetMaxOpenConns(3)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(30 * time.Second)
 	err = db.Ping()
 	if err != nil {
 		return nil, err
@@ -51,14 +55,18 @@ func (r *PostgreSQLRepository) Close() {
 	_ = r.db.Close()
 }
 
-func (r *PostgreSQLRepository) Get(wordID uuid.UUID) (string, error) {
-	const op = "repositories.PostgreSQLRepository.Get"
+func (r *PostgreSQLRepository) DB() *sql.DB {
+	return r.db
+}
+
+func (r *PostgreSQLRepository) Get(word string) (string, error) {
+	const op = "repositories.Repository.Get"
 
 	query := `SELECT translation FROM words WHERE text = $1`
 
 	var text string
 
-	err := r.db.QueryRowContext(r.ctx, query, wordID).Scan(&text)
+	err := r.db.QueryRowContext(r.ctx, query, word).Scan(&text)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", fmt.Errorf("%s: %w", op, ErrNotFound)
@@ -70,25 +78,57 @@ func (r *PostgreSQLRepository) Get(wordID uuid.UUID) (string, error) {
 	return text, nil
 }
 
-func (r *PostgreSQLRepository) Set(wordID uuid.UUID, key string, value string) error {
-	const op = "repositories.PostgreSQLRepository.Set"
+func (r *PostgreSQLRepository) Set(wordID uuid.UUID, key string, value string) (err error) {
+	const op = "repositories.Repository.Set"
 
-	query := `INSERT INTO words (word_id, text, translation) VALUES ($1, $2, $3)`
-
-	_, err := r.db.ExecContext(r.ctx, query, wordID, key, value)
+	tx, err := r.db.BeginTx(r.ctx, nil)
 	if err != nil {
-		var pgErr *pq.Error
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return fmt.Errorf("%s: %w", op, ErrAlreadyExists)
-		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	return nil
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	query := `INSERT INTO words (word_id, text, translation) VALUES ($1, $2, $3)`
+
+	_, err = tx.ExecContext(r.ctx, query, wordID, key, value)
+	if err != nil {
+		var pgErr *pq.Error
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			err = fmt.Errorf("%s: %w", op, ErrAlreadyExists)
+			return
+		}
+		err = fmt.Errorf("%s: %w", op, err)
+		return
+	}
+
+	eventID := uuid.New()
+	query = `INSERT INTO outbox (event_id, word_id) VALUES ($1, $2)`
+
+	_, err = tx.ExecContext(r.ctx, query, eventID, wordID)
+	if err != nil {
+		var pgErr *pq.Error
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			err = fmt.Errorf("%s: %w", op, ErrAlreadyExists)
+			return
+		}
+		err = fmt.Errorf("%s: %w", op, err)
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		err = fmt.Errorf("%s: %w", op, err)
+	}
+
+	return
 }
 
 func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
-	const op = "repositories.PostgreSQLRepository.Gets"
+	const op = "repositories.Repository.Gets"
 
 	query := `SELECT word_id, text, translation FROM words`
 	rows, err := r.db.QueryContext(r.ctx, query)
@@ -96,7 +136,9 @@ func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	defer rows.Close()
+	defer func() {
+		err = rows.Close()
+	}()
 
 	var words []models.Word
 	for rows.Next() {
@@ -117,7 +159,7 @@ func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
 }
 
 func (r *PostgreSQLRepository) Delete(wordID uuid.UUID) error {
-	const op = "repositories.PostgreSQLRepository.Delete"
+	const op = "repositories.Repository.Delete"
 
 	query := `DELETE FROM words WHERE word_id = $1`
 
