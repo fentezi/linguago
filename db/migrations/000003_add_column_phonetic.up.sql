@@ -1,0 +1,2 @@
+ALTER TABLE IF EXISTS "words"
+ADD COLUMN phonetic VARCHAR(255);
