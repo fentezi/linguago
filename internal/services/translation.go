@@ -3,15 +3,15 @@ package services
 import (
 	"errors"
 	"fmt"
-	"github.com/fentezi/translator/internal/repositories"
-	"os"
-
-	"log/slog"
-
 	"github.com/fentezi/translator/internal/models"
+	"github.com/fentezi/translator/internal/repositories"
+	"github.com/fentezi/translator/pkg/dictionary"
 	"github.com/fentezi/translator/pkg/elevenlabs"
 	google "github.com/fentezi/translator/pkg/google_translate"
 	"github.com/google/uuid"
+	"log/slog"
+	"os"
+	"strings"
 )
 
 var (
@@ -29,7 +29,7 @@ func (s *Service) CreateWord(word, translation string) (*models.Word, error) {
 
 	logger.Debug("adding translation")
 
-	err := s.Repository.Set(wordID, word, translation)
+	err := s.Repository.Set(wordID, word, translation, "")
 	if err != nil {
 		logger.Error("failed to save translation to PostgreSQL", slog.Any("error", err))
 		return nil, err
@@ -76,10 +76,24 @@ func (s *Service) TranslateWord(word string) (string, error) {
 		return "", fmt.Errorf("failed to get translation from Google API: %w", err)
 	}
 
+	var phonetic string
+	w := strings.Split(word, " ")
+	if len(w) == 1 {
+		phonetic, err = dictionary.Phonetic(word)
+		if err != nil {
+			logger.Error("failed to generate phonetic", slog.Any("error", err))
+			return "", fmt.Errorf("failed to generate phonetic: %w", err)
+		}
+		phonetic = strings.Replace(phonetic, "/", "[", 1)
+		phonetic = strings.Replace(phonetic, "/", "]", 1)
+	}
+
 	wordID := uuid.New()
-	saveErr := s.Repository.Set(wordID, word, translation)
+	saveErr := s.Repository.Set(wordID, word, translation, phonetic)
 	if saveErr != nil {
-		logger.Warn("translation fetched but failed to save to PostgreSQL", slog.Any("error", saveErr))
+		logger.Warn(
+			"translation fetched but failed to save to PostgreSQL", slog.Any("error", saveErr),
+		)
 	}
 
 	if err := s.SaveAudio(wordID, word); err != nil {

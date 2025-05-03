@@ -6,4 +6,5 @@ type Word struct {
 	ID          uuid.UUID
 	Word        string
 	Translation string
+	Phonetic    string
 }

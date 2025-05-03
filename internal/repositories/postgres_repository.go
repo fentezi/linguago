@@ -24,7 +24,8 @@ var (
 )
 
 func New(ctx context.Context, cfg *config.Postgres) (*PostgreSQLRepository, error) {
-	psql := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+	psql := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host,
 		cfg.Port,
 		cfg.Username,
@@ -78,7 +79,9 @@ func (r *PostgreSQLRepository) Get(word string) (string, error) {
 	return text, nil
 }
 
-func (r *PostgreSQLRepository) Set(wordID uuid.UUID, key string, value string) (err error) {
+func (r *PostgreSQLRepository) Set(
+	wordID uuid.UUID, key string, value, phonetic string,
+) (err error) {
 	const op = "repositories.Repository.Set"
 
 	tx, err := r.db.BeginTx(r.ctx, nil)
@@ -92,9 +95,9 @@ func (r *PostgreSQLRepository) Set(wordID uuid.UUID, key string, value string) (
 		}
 	}()
 
-	query := `INSERT INTO words (word_id, text, translation) VALUES ($1, $2, $3)`
+	query := `INSERT INTO words (word_id, text, translation, phonetic) VALUES ($1, $2, $3, $4)`
 
-	_, err = tx.ExecContext(r.ctx, query, wordID, key, value)
+	_, err = tx.ExecContext(r.ctx, query, wordID, key, value, phonetic)
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -130,7 +133,7 @@ func (r *PostgreSQLRepository) Set(wordID uuid.UUID, key string, value string) (
 func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
 	const op = "repositories.Repository.Gets"
 
-	query := `SELECT word_id, text, translation FROM words`
+	query := `SELECT word_id, text, translation, phonetic FROM words`
 	rows, err := r.db.QueryContext(r.ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -143,7 +146,7 @@ func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
 	var words []models.Word
 	for rows.Next() {
 		var word models.Word
-		err := rows.Scan(&word.ID, &word.Word, &word.Translation)
+		err := rows.Scan(&word.ID, &word.Word, &word.Translation, &word.Phonetic)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
