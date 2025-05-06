@@ -8,13 +8,15 @@ import (
 )
 
 type Service struct {
-	Repository *repositories.PostgreSQLRepository
-	ClientLabs *elevenlabs.Client
+	Repository repositories.PostgreSQLRepository
+	ClientLabs elevenlabs.Client
 	log        *slog.Logger
 }
 
-func New(pr *repositories.PostgreSQLRepository, log *slog.Logger, client *elevenlabs.Client) *Service {
-	return &Service{
+func New(
+	log *slog.Logger, client elevenlabs.Client, pr repositories.PostgreSQLRepository,
+) Service {
+	return Service{
 		ClientLabs: client,
 		log:        log,
 		Repository: pr,

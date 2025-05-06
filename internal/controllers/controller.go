@@ -6,12 +6,12 @@ import (
 )
 
 type Controller struct {
-	service   *services.Service
+	service   services.Service
 	validator *vld.Validator
 }
 
-func New(service *services.Service) *Controller {
-	return &Controller{
+func New(service services.Service) Controller {
+	return Controller{
 		service:   service,
 		validator: vld.New(),
 	}

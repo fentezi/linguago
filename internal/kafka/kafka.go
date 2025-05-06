@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -22,7 +23,7 @@ type Producer struct {
 	producer *kafka.Producer
 }
 
-func New(broker config.Kafka) (*Producer, error) {
+func New(broker config.Kafka) (Producer, error) {
 	address := toAddress(broker)
 	conf := &kafka.ConfigMap{
 		"bootstrap.servers": address,
@@ -30,10 +31,10 @@ func New(broker config.Kafka) (*Producer, error) {
 
 	p, err := kafka.NewProducer(conf)
 	if err != nil {
-		return nil, fmt.Errorf("error creating kafka producer: %w", err)
+		return Producer{}, fmt.Errorf("error creating kafka producer: %w", err)
 	}
 
-	return &Producer{producer: p}, nil
+	return Producer{producer: p}, nil
 }
 
 func (p *Producer) Produce(msg entities.KafkaMessage) error {
@@ -68,9 +69,10 @@ func (p *Producer) Produce(msg entities.KafkaMessage) error {
 	}
 }
 
-func (p *Producer) Close() {
+func (p *Producer) Close(ctx context.Context) error {
 	p.producer.Flush(flushTimeout)
 	p.producer.Close()
+	return nil
 }
 
 func toAddress(broker config.Kafka) string {

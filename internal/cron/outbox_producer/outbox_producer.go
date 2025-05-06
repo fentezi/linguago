@@ -13,14 +13,14 @@ import (
 
 type OutboxProducer struct {
 	log      *slog.Logger
-	db       *repositories.PostgreSQLRepository
-	producer *kafka.Producer
+	db       repositories.PostgreSQLRepository
+	producer kafka.Producer
 }
 
 func New(
-	log *slog.Logger, producer *kafka.Producer, db *repositories.PostgreSQLRepository,
-) *OutboxProducer {
-	return &OutboxProducer{
+	log *slog.Logger, producer kafka.Producer, db repositories.PostgreSQLRepository,
+) OutboxProducer {
+	return OutboxProducer{
 		log:      log,
 		producer: producer,
 		db:       db,
@@ -102,8 +102,4 @@ func (o *OutboxProducer) ProduceMessage(ctx context.Context, topic string) (err 
 		return fmt.Errorf("%s: %w", op, err)
 	}
 	return nil
-}
-
-func (o *OutboxProducer) Close() {
-	o.producer.Close()
 }

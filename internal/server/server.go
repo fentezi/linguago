@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"github.com/fentezi/translator/config"
 	"log/slog"
 	"time"
 
@@ -12,46 +14,54 @@ import (
 
 type Server struct {
 	Controller controllers.Controller
+	ech        *echo.Echo
 }
 
-func New(controller controllers.Controller) *Server {
-	return &Server{
+func New(controller controllers.Controller) Server {
+	return Server{
 		Controller: controller,
 	}
 }
 
-func (s *Server) Start(log *slog.Logger) *echo.Echo {
+func (s *Server) Start(log *slog.Logger, cfg config.Server) error {
+	const op = "server.Start"
 	e := echo.New()
+	s.ech = e
 	e.Use(middleware.CORS())
-	e.Use(middleware.RequestLoggerWithConfig(
-		middleware.RequestLoggerConfig{
-			LogStatus:   true,
-			LogURI:      true,
-			LogError:    true,
-			LogMethod:   true,
-			LogRemoteIP: true,
-			LogLatency:  true,
-			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-				if v.Error == nil {
+	e.Use(
+		middleware.RequestLoggerWithConfig(
+			middleware.RequestLoggerConfig{
+				LogStatus:   true,
+				LogURI:      true,
+				LogError:    true,
+				LogMethod:   true,
+				LogRemoteIP: true,
+				LogLatency:  true,
+				LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+					if v.Error == nil {
 
-					log.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST",
-						slog.String("uri", v.URI),
-						slog.Int("status", v.Status),
-						slog.String("method", v.Method),
-						slog.String("remote_ip", v.RemoteIP),
-						slog.Duration("latency", time.Duration(v.Latency.Seconds())),
-					)
-				} else {
-					log.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR",
-						slog.String("uri", v.URI),
-						slog.Int("status", v.Status),
-						slog.String("method", v.Method),
-						slog.String("err", v.Error.Error()),
-					)
-				}
-				return nil
+						log.LogAttrs(
+							context.Background(), slog.LevelInfo, "REQUEST",
+							slog.String("uri", v.URI),
+							slog.Int("status", v.Status),
+							slog.String("method", v.Method),
+							slog.String("remote_ip", v.RemoteIP),
+							slog.Duration("latency", time.Duration(v.Latency.Seconds())),
+						)
+					} else {
+						log.LogAttrs(
+							context.Background(), slog.LevelError, "REQUEST_ERROR",
+							slog.String("uri", v.URI),
+							slog.Int("status", v.Status),
+							slog.String("method", v.Method),
+							slog.String("err", v.Error.Error()),
+						)
+					}
+					return nil
+				},
 			},
-		}))
+		),
+	)
 
 	api := e.Group("/api/v1")
 	{
@@ -63,5 +73,15 @@ func (s *Server) Start(log *slog.Logger) *echo.Echo {
 
 	}
 
-	return e
+	address := fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
+	err := e.Start(address)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *Server) Close(ctx context.Context) error {
+	return s.ech.Close()
 }

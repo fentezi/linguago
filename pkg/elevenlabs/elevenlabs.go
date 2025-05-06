@@ -15,13 +15,11 @@ const (
 	VoiceID = "9BWtsMINqrJLrRacOk9x"
 )
 
-func New(ctx context.Context, apiKey string) *elevenlabs.Client {
-	client := elevenlabs.NewClient(ctx, apiKey, 10*time.Second)
-
-	return client
+func New(ctx context.Context, apiKey string) elevenlabs.Client {
+	return *elevenlabs.NewClient(ctx, apiKey, 10*time.Second)
 }
 
-func TextToSpeech(client *elevenlabs.Client, wordID uuid.UUID, word string) error {
+func TextToSpeech(client elevenlabs.Client, wordID uuid.UUID, word string) error {
 	ttsReq := elevenlabs.TextToSpeechRequest{
 		Text:    word,
 		ModelID: ModelID,

@@ -23,7 +23,7 @@ var (
 	ErrAlreadyExists = errors.New("already exists")
 )
 
-func New(ctx context.Context, cfg *config.Postgres) (*PostgreSQLRepository, error) {
+func New(ctx context.Context, cfg config.Postgres) (PostgreSQLRepository, error) {
 	psql := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host,
@@ -35,7 +35,7 @@ func New(ctx context.Context, cfg *config.Postgres) (*PostgreSQLRepository, erro
 
 	db, err := sql.Open("postgres", psql)
 	if err != nil {
-		return nil, err
+		return PostgreSQLRepository{}, err
 	}
 
 	db.SetMaxOpenConns(3)
@@ -43,17 +43,17 @@ func New(ctx context.Context, cfg *config.Postgres) (*PostgreSQLRepository, erro
 	db.SetConnMaxLifetime(30 * time.Second)
 	err = db.Ping()
 	if err != nil {
-		return nil, err
+		return PostgreSQLRepository{}, err
 	}
 
-	return &PostgreSQLRepository{
+	return PostgreSQLRepository{
 		ctx: ctx,
 		db:  db,
 	}, nil
 }
 
-func (r *PostgreSQLRepository) Close() {
-	_ = r.db.Close()
+func (r *PostgreSQLRepository) Close(ctx context.Context) error {
+	return r.db.Close()
 }
 
 func (r *PostgreSQLRepository) DB() *sql.DB {

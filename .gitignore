@@ -39,3 +39,5 @@ logs
 # air tools
 tmp
 .air.toml
+
+build
