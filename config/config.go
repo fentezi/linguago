@@ -11,16 +11,22 @@ import (
 type (
 	Config struct {
 		Env      string   `yaml:"env"`
+		Server   Server   `yaml:"server"`
 		Postgres Postgres `yaml:"postgres"`
-		ApiKey   string   `yaml:"api_key" env:"API_KEY"`
+		ApiKey   string   `env:"API_KEY"`
 		Broker   Kafka    `yaml:"brokers"`
+	}
+
+	Server struct {
+		Host string `yaml:"host"`
+		Port string `yaml:"port"`
 	}
 
 	Postgres struct {
 		Host     string `yaml:"host" env:"POSTGRES_HOST"`
 		Port     string `yaml:"port"`
 		Username string `yaml:"username"`
-		Password string `yaml:"password" env:"POSTGRES_PASSWORD"`
+		Password string `env:"POSTGRES_PASSWORD"`
 		Database string `yaml:"database"`
 	}
 
