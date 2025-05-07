@@ -8,13 +8,13 @@ import (
 )
 
 type Service struct {
-	Repository repositories.PostgreSQLRepository
+	Repository repositories.PostgreRepository
 	ClientLabs elevenlabs.Client
 	log        *slog.Logger
 }
 
 func New(
-	log *slog.Logger, client elevenlabs.Client, pr repositories.PostgreSQLRepository,
+	log *slog.Logger, client elevenlabs.Client, pr repositories.PostgreRepository,
 ) Service {
 	return Service{
 		ClientLabs: client,

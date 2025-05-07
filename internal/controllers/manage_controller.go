@@ -9,14 +9,16 @@ import (
 )
 
 func (h *Controller) GetWords(c echo.Context) error {
-	words, err := h.service.GetWords()
+	words, err := h.service.GetWords(c.Request().Context())
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, helper.NewAPIError(err))
 	}
 
-	return c.JSON(http.StatusOK, echo.Map{
-		"words": words,
-	})
+	return c.JSON(
+		http.StatusOK, echo.Map{
+			"words": words,
+		},
+	)
 }
 
 func (h *Controller) DeleteWord(c echo.Context) error {
@@ -29,7 +31,7 @@ func (h *Controller) DeleteWord(c echo.Context) error {
 	if errs := h.validator.Validate(req); len(errs) > 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, helper.InvalidRequestData(errs))
 	}
-	err := h.service.DeleteWord(req.WordID)
+	err := h.service.DeleteWord(c.Request().Context(), req.WordID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, helper.NewAPIError(err))
 	}

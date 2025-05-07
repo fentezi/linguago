@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/fentezi/translator/internal/models"
@@ -18,7 +19,7 @@ var (
 	ErrAudioNotFound = errors.New("audio not found")
 )
 
-func (s *Service) CreateWord(word, translation string) (*models.Word, error) {
+func (s *Service) CreateWord(ctx context.Context, word, translation string) (*models.Word, error) {
 	wordID := uuid.New()
 	logger := s.log.With(
 		slog.String("word", word),
@@ -29,7 +30,7 @@ func (s *Service) CreateWord(word, translation string) (*models.Word, error) {
 
 	logger.Debug("adding translation")
 
-	err := s.Repository.Set(wordID, word, translation, "")
+	err := s.Repository.Set(ctx, wordID, word, translation, "")
 	if err != nil {
 		logger.Error("failed to save translation to PostgreSQL", slog.Any("error", err))
 		return nil, err
@@ -50,14 +51,14 @@ func (s *Service) CreateWord(word, translation string) (*models.Word, error) {
 	return res, nil
 }
 
-func (s *Service) TranslateWord(word string) (string, error) {
+func (s *Service) TranslateWord(ctx context.Context, word string) (string, error) {
 	logger := s.log.With(
 		slog.String("word", word),
 		slog.String("operation", "TranslateWord"),
 	)
 	logger.Debug("fetching translation")
 
-	text, err := s.Repository.Get(word)
+	text, err := s.Repository.Get(ctx, word)
 	if err != nil {
 		if !errors.Is(err, repositories.ErrNotFound) {
 			logger.Error("failed to fetch translation from PostgreSQL", slog.Any("error", err))
@@ -89,7 +90,7 @@ func (s *Service) TranslateWord(word string) (string, error) {
 	}
 
 	wordID := uuid.New()
-	saveErr := s.Repository.Set(wordID, word, translation, phonetic)
+	saveErr := s.Repository.Set(ctx, wordID, word, translation, phonetic)
 	if saveErr != nil {
 		logger.Warn(
 			"translation fetched but failed to save to PostgreSQL", slog.Any("error", saveErr),

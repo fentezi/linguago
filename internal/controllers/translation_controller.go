@@ -20,10 +20,12 @@ func (h *Controller) CreateWord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, helper.InvalidRequestData(errs))
 	}
 
-	res, err := h.service.CreateWord(req.Word, req.Translation)
+	res, err := h.service.CreateWord(c.Request().Context(), req.Word, req.Translation)
 	if err != nil {
 		if errors.Is(err, repositories.ErrAlreadyExists) {
-			return echo.NewHTTPError(http.StatusConflict, helper.NewAPIError(errors.New("word already exists")))
+			return echo.NewHTTPError(
+				http.StatusConflict, helper.NewAPIError(errors.New("word already exists")),
+			)
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, helper.NewAPIError(err))
 	}
@@ -47,14 +49,16 @@ func (h *Controller) TranslateWord(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, helper.InvalidRequestData(errs))
 	}
 
-	translation, err := h.service.TranslateWord(req.Word)
+	translation, err := h.service.TranslateWord(c.Request().Context(), req.Word)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, helper.NewAPIError(err))
 	}
 
-	return c.JSON(http.StatusOK, echo.Map{
-		"translation": translation,
-	})
+	return c.JSON(
+		http.StatusOK, echo.Map{
+			"translation": translation,
+		},
+	)
 }
 
 func (h *Controller) GetAudio(c echo.Context) error {

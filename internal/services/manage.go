@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -10,11 +11,11 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Service) GetWords() ([]models.Word, error) {
+func (s *Service) GetWords(ctx context.Context) ([]models.Word, error) {
 	logger := s.log.With(slog.String("operation", "GetWords"))
 	logger.Debug("fetching all words from PostgreSQL")
 
-	words, err := s.Repository.Gets()
+	words, err := s.Repository.Gets(ctx)
 	if err != nil {
 		logger.Error("failed to fetch words from PostgreSQL", slog.Any("error", err))
 		return nil, err
@@ -24,11 +25,13 @@ func (s *Service) GetWords() ([]models.Word, error) {
 	return words, nil
 }
 
-func (s *Service) DeleteWord(wordID uuid.UUID) error {
-	logger := s.log.With(slog.String("word_id", wordID.String()), slog.String("operation", "DeleteWord"))
+func (s *Service) DeleteWord(ctx context.Context, wordID uuid.UUID) error {
+	logger := s.log.With(
+		slog.String("word_id", wordID.String()), slog.String("operation", "DeleteWord"),
+	)
 	logger.Debug("starting deletion process")
 
-	if err := s.Repository.Delete(wordID); err != nil {
+	if err := s.Repository.Delete(ctx, wordID); err != nil {
 		logger.Error("failed to delete translation from PostgreSQL", slog.Any("error", err))
 		return err
 	}
@@ -38,9 +41,14 @@ func (s *Service) DeleteWord(wordID uuid.UUID) error {
 	err := os.Remove(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			logger.Warn("audio file not found, skipping deletion", slog.String("file_path", filePath))
+			logger.Warn(
+				"audio file not found, skipping deletion", slog.String("file_path", filePath),
+			)
 		} else {
-			logger.Error("failed to delete audio file", slog.String("file_path", filePath), slog.Any("error", err))
+			logger.Error(
+				"failed to delete audio file", slog.String("file_path", filePath),
+				slog.Any("error", err),
+			)
 			return fmt.Errorf("failed to delete audio file: %w", err)
 		}
 	} else {
