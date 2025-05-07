@@ -4,7 +4,6 @@ import (
 	gtranslate "github.com/gilang-as/google-translate"
 )
 
-// translate text from English to Russian
 func TranslateWordAPI(text string) (string, error) {
 	value := gtranslate.Translate{
 		Text: text,

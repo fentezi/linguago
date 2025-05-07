@@ -13,12 +13,12 @@ import (
 
 type OutboxProducer struct {
 	log      *slog.Logger
-	db       repositories.PostgreSQLRepository
+	db       repositories.PostgreRepository
 	producer kafka.Producer
 }
 
 func New(
-	log *slog.Logger, producer kafka.Producer, db repositories.PostgreSQLRepository,
+	log *slog.Logger, producer kafka.Producer, db repositories.PostgreRepository,
 ) OutboxProducer {
 	return OutboxProducer{
 		log:      log,

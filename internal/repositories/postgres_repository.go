@@ -13,9 +13,8 @@ import (
 	"github.com/lib/pq"
 )
 
-type PostgreSQLRepository struct {
-	db  *sql.DB
-	ctx context.Context
+type PostgreRepository struct {
+	db *sql.DB
 }
 
 var (
@@ -23,7 +22,7 @@ var (
 	ErrAlreadyExists = errors.New("already exists")
 )
 
-func New(ctx context.Context, cfg config.Postgres) (PostgreSQLRepository, error) {
+func New(cfg config.Postgres) (PostgreRepository, error) {
 	psql := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host,
@@ -35,7 +34,7 @@ func New(ctx context.Context, cfg config.Postgres) (PostgreSQLRepository, error)
 
 	db, err := sql.Open("postgres", psql)
 	if err != nil {
-		return PostgreSQLRepository{}, err
+		return PostgreRepository{}, err
 	}
 
 	db.SetMaxOpenConns(3)
@@ -43,31 +42,30 @@ func New(ctx context.Context, cfg config.Postgres) (PostgreSQLRepository, error)
 	db.SetConnMaxLifetime(30 * time.Second)
 	err = db.Ping()
 	if err != nil {
-		return PostgreSQLRepository{}, err
+		return PostgreRepository{}, err
 	}
 
-	return PostgreSQLRepository{
-		ctx: ctx,
-		db:  db,
+	return PostgreRepository{
+		db: db,
 	}, nil
 }
 
-func (r *PostgreSQLRepository) Close(ctx context.Context) error {
+func (r *PostgreRepository) Close(ctx context.Context) error {
 	return r.db.Close()
 }
 
-func (r *PostgreSQLRepository) DB() *sql.DB {
+func (r *PostgreRepository) DB() *sql.DB {
 	return r.db
 }
 
-func (r *PostgreSQLRepository) Get(word string) (string, error) {
+func (r *PostgreRepository) Get(ctx context.Context, word string) (string, error) {
 	const op = "repositories.Repository.Get"
 
 	query := `SELECT translation FROM words WHERE text = $1`
 
 	var text string
 
-	err := r.db.QueryRowContext(r.ctx, query, word).Scan(&text)
+	err := r.db.QueryRowContext(ctx, query, word).Scan(&text)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", fmt.Errorf("%s: %w", op, ErrNotFound)
@@ -79,12 +77,12 @@ func (r *PostgreSQLRepository) Get(word string) (string, error) {
 	return text, nil
 }
 
-func (r *PostgreSQLRepository) Set(
-	wordID uuid.UUID, key string, value, phonetic string,
+func (r *PostgreRepository) Set(
+	ctx context.Context, wordID uuid.UUID, key string, value, phonetic string,
 ) (err error) {
 	const op = "repositories.Repository.Set"
 
-	tx, err := r.db.BeginTx(r.ctx, nil)
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -97,7 +95,7 @@ func (r *PostgreSQLRepository) Set(
 
 	query := `INSERT INTO words (word_id, text, translation, phonetic) VALUES ($1, $2, $3, $4)`
 
-	_, err = tx.ExecContext(r.ctx, query, wordID, key, value, phonetic)
+	_, err = tx.ExecContext(ctx, query, wordID, key, value, phonetic)
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -111,7 +109,7 @@ func (r *PostgreSQLRepository) Set(
 	eventID := uuid.New()
 	query = `INSERT INTO outbox (event_id, word_id) VALUES ($1, $2)`
 
-	_, err = tx.ExecContext(r.ctx, query, eventID, wordID)
+	_, err = tx.ExecContext(ctx, query, eventID, wordID)
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -130,11 +128,11 @@ func (r *PostgreSQLRepository) Set(
 	return
 }
 
-func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
+func (r *PostgreRepository) Gets(ctx context.Context) ([]models.Word, error) {
 	const op = "repositories.Repository.Gets"
 
 	query := `SELECT word_id, text, translation, phonetic FROM words`
-	rows, err := r.db.QueryContext(r.ctx, query)
+	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -161,12 +159,12 @@ func (r *PostgreSQLRepository) Gets() ([]models.Word, error) {
 	return words, nil
 }
 
-func (r *PostgreSQLRepository) Delete(wordID uuid.UUID) error {
+func (r *PostgreRepository) Delete(ctx context.Context, wordID uuid.UUID) error {
 	const op = "repositories.Repository.Delete"
 
 	query := `DELETE FROM words WHERE word_id = $1`
 
-	_, err := r.db.ExecContext(r.ctx, query, wordID)
+	_, err := r.db.ExecContext(ctx, query, wordID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
