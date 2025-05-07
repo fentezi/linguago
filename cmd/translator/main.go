@@ -33,7 +33,7 @@ func main() {
 	defer stop()
 
 	logging.Info("repository initializing")
-	repo, err := repositories.New(ctx, cfg.Postgres)
+	repo, err := repositories.New(cfg.Postgres)
 	if err != nil {
 		logging.Error("failed to initialize repository", slog.Any("error", err))
 		panic(err)
@@ -74,7 +74,7 @@ func main() {
 		err = srv.Start(logging, cfg.Server)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logging.Error("failed to start server", slog.Any("error", err))
-			panic(err)
+			stop()
 		}
 	}()
 
